@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using WebCatalog.Application.DTOs;
 using WebCatalog.Application.Interfaces;
 
@@ -7,6 +8,7 @@ namespace WebCatalog.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [EnableRateLimiting("fixedwindow")]
     public class CategoriesController : ControllerBase
     {
         private readonly ICategoryService _categoryService;

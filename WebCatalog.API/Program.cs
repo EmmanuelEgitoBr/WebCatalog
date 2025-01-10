@@ -66,6 +66,12 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseRouting();
+
+app.MapGet("/", () => "Hello, OpenTelemetry with Collector!");
+
+app.UseRateLimiter();
 
 app.UseCors();
 

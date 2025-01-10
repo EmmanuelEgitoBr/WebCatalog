@@ -1,9 +1,14 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using System.Text;
 using WebCatalog.Application.DTOs.Mappings;
 using WebCatalog.Application.Interfaces;
@@ -69,6 +74,30 @@ namespace WebCatalog.CrossCutting.IoC
                 {
                     policy.WithOrigins("http://www.apirequest.io");
                 });
+            });
+
+            services.AddRateLimiter(opt =>
+            {
+                opt.AddFixedWindowLimiter(policyName: "fixedwindow", options =>
+                {
+                    options.PermitLimit = 1;
+                    options.Window = TimeSpan.FromSeconds(5);
+                    options.QueueLimit = 0;
+                });
+                opt.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            });
+
+            services.AddOpenTelemetry().WithTracing(tracing =>
+            {
+                tracing
+                    .SetResourceBuilder(ResourceBuilder.CreateDefault().AddService("MeuServico"))
+                    .AddAspNetCoreInstrumentation() // Instrumentação automática para ASP.NET Core
+                    .AddHttpClientInstrumentation() // Instrumentação para chamadas HTTP
+                    .AddOtlpExporter(options =>
+                    {
+                        options.Endpoint = new Uri("http://localhost:4318"); // Configura o Collector na porta 55680
+                    })
+                    .AddConsoleExporter(); // Exportar para o console (pode ser substituído por outros exportadores, como Jaeger, Zipkin, etc)
             });
             
             services.AddDbContext<ApplicationDbContext>(options => 
